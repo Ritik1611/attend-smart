@@ -31,6 +31,8 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { db } from '../../firebaseConfig';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { AttendanceApiService } from "@/services/attendanceApiService";
 import { markManualAttendance } from "@/services/attendanceService";
 
@@ -64,30 +66,34 @@ const ManualAttendanceForm: React.FC<ManualAttendanceFormProps> = ({ userId }) =
     
     try {
       const dateString = format(data.date, "yyyy-MM-dd");
+      const attendanceId = `${userId}_${data.classId}_${dateString}`;
       
+      // Direct Firestore save to ensure data is definitely stored
+      await setDoc(doc(db, "attendance", attendanceId), {
+        userId,
+        classId: data.classId,
+        date: dateString,
+        status: data.status,
+        manuallyRecorded: true,
+        timestamp: serverTimestamp()
+      });
+      
+      console.log(`Attendance directly saved to Firestore: ${attendanceId}`);
+      
+      // Also try API service as a backup
       try {
-        // First try API service
         await AttendanceApiService.markAttendance({
           userId,
           classId: data.classId,
           date: dateString,
           status: data.status,
         });
-        
-        toast.success("Attendance recorded successfully");
+        console.log(`Attendance also recorded through API: ${attendanceId}`);
       } catch (apiError) {
-        console.error("Error recording attendance through API:", apiError);
-        
-        // Fallback to Firebase direct method
-        const result = await markManualAttendance(userId, data.classId, dateString, data.status);
-        
-        if (result) {
-          toast.success("Attendance recorded successfully (fallback)");
-        } else {
-          throw new Error("Failed to record attendance even with fallback");
-        }
+        console.error("API backup recording failed (non-critical):", apiError);
       }
       
+      toast.success("Attendance recorded successfully");
       form.reset({
         classId: "",
         status: "present",

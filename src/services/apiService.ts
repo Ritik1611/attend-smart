@@ -22,8 +22,8 @@ interface ApiResponse<T> {
  * Custom API service for handling REST API calls
  */
 class ApiService {
-  // Flag to control if we're in mock mode
-  private static useMockApi = true;
+  // Flag to control if we're in mock mode - Set this to false by default to use Firebase
+  private static useMockApi = false;
   // Flag to control if we're showing verbose logging
   private static verboseLogging = true;
   

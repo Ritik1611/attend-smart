@@ -5,9 +5,12 @@ import App from './App.tsx';
 import './index.css';
 import ApiService from './services/apiService.ts';
 
+// Set API to use Firebase by default (not mock)
+ApiService.setMockApiMode(false);
+
 // Log API configuration
 console.log('🔧 API Base URL:', ApiService.getApiBaseUrl());
-console.log('🧪 Using Mock API:', true); // Default is true
+console.log('🧪 Using Mock API:', false); // Updated to false since we're using Firebase
 
 // Get the root element
 const rootElement = document.getElementById("root");
