@@ -2,8 +2,14 @@
 import { auth } from "../../firebaseConfig";
 import MockApiService from "./mockApiService";
 
-// Base URL for our custom API
-const API_BASE_URL = "https://api.attendsmart.com/api"; // Update with your actual API endpoint
+// Base URL for our custom API - Allow environment variable override or fallback to default
+const DEFAULT_API_BASE_URL = "https://api.attendsmart.com/api"; 
+const LOCAL_API_BASE_URL = "http://localhost:3001/api";
+
+// Get the API base URL from environment or use default
+const API_BASE_URL = 
+  import.meta.env.VITE_API_BASE_URL || 
+  (typeof window !== 'undefined' && window.location.hostname === 'localhost' ? LOCAL_API_BASE_URL : DEFAULT_API_BASE_URL);
 
 // Interface for API response
 interface ApiResponse<T> {
@@ -18,6 +24,8 @@ interface ApiResponse<T> {
 class ApiService {
   // Flag to control if we're in mock mode
   private static useMockApi = true;
+  // Flag to control if we're showing verbose logging
+  private static verboseLogging = true;
   
   /**
    * Helper method to get authentication headers
@@ -39,7 +47,9 @@ class ApiService {
       // Use mock API if flag is set
       if (this.useMockApi) {
         console.log(`📤 API Request (MOCK): GET ${endpoint}`, params);
-        return MockApiService.get<T>(endpoint, params);
+        const mockResponse = await MockApiService.get<T>(endpoint, params);
+        console.log(`📥 API Response (MOCK): GET ${endpoint}`, mockResponse);
+        return mockResponse;
       }
       
       const url = new URL(`${API_BASE_URL}${endpoint}`);
@@ -62,7 +72,13 @@ class ApiService {
       const endTime = performance.now();
       console.log(`📥 API Response: GET ${url.toString()} - ${response.status} (${Math.round(endTime - startTime)}ms)`);
       
-      return this.handleResponse<T>(response);
+      const result = await this.handleResponse<T>(response);
+      
+      if (this.verboseLogging) {
+        console.log(`📦 API Response Data: GET ${url.toString()}`, result);
+      }
+      
+      return result;
     } catch (error) {
       console.error(`❌ API Error: GET ${endpoint} failed:`, error);
       
@@ -87,7 +103,9 @@ class ApiService {
       // Use mock API if flag is set
       if (this.useMockApi) {
         console.log(`📤 API Request (MOCK): POST ${endpoint}`, data);
-        return MockApiService.post<T>(endpoint, data);
+        const mockResponse = await MockApiService.post<T>(endpoint, data);
+        console.log(`📥 API Response (MOCK): POST ${endpoint}`, mockResponse);
+        return mockResponse;
       }
       
       console.log(`📤 API Request: POST ${API_BASE_URL}${endpoint}`, data);
@@ -102,7 +120,13 @@ class ApiService {
       const endTime = performance.now();
       console.log(`📥 API Response: POST ${API_BASE_URL}${endpoint} - ${response.status} (${Math.round(endTime - startTime)}ms)`);
       
-      return this.handleResponse<T>(response);
+      const result = await this.handleResponse<T>(response);
+      
+      if (this.verboseLogging) {
+        console.log(`📦 API Response Data: POST ${endpoint}`, result);
+      }
+      
+      return result;
     } catch (error) {
       console.error(`❌ API Error: POST ${endpoint} failed:`, error);
       
@@ -127,7 +151,9 @@ class ApiService {
       // Use mock API if flag is set
       if (this.useMockApi) {
         console.log(`📤 API Request (MOCK): PUT ${endpoint}`, data);
-        return MockApiService.put<T>(endpoint, data);
+        const mockResponse = await MockApiService.put<T>(endpoint, data);
+        console.log(`📥 API Response (MOCK): PUT ${endpoint}`, mockResponse);
+        return mockResponse;
       }
       
       console.log(`📤 API Request: PUT ${API_BASE_URL}${endpoint}`, data);
@@ -142,7 +168,13 @@ class ApiService {
       const endTime = performance.now();
       console.log(`📥 API Response: PUT ${API_BASE_URL}${endpoint} - ${response.status} (${Math.round(endTime - startTime)}ms)`);
       
-      return this.handleResponse<T>(response);
+      const result = await this.handleResponse<T>(response);
+      
+      if (this.verboseLogging) {
+        console.log(`📦 API Response Data: PUT ${endpoint}`, result);
+      }
+      
+      return result;
     } catch (error) {
       console.error(`❌ API Error: PUT ${endpoint} failed:`, error);
       
@@ -167,7 +199,9 @@ class ApiService {
       // Use mock API if flag is set
       if (this.useMockApi) {
         console.log(`📤 API Request (MOCK): DELETE ${endpoint}`);
-        return MockApiService.delete<T>(endpoint);
+        const mockResponse = await MockApiService.delete<T>(endpoint);
+        console.log(`📥 API Response (MOCK): DELETE ${endpoint}`, mockResponse);
+        return mockResponse;
       }
       
       console.log(`📤 API Request: DELETE ${API_BASE_URL}${endpoint}`);
@@ -181,7 +215,13 @@ class ApiService {
       const endTime = performance.now();
       console.log(`📥 API Response: DELETE ${API_BASE_URL}${endpoint} - ${response.status} (${Math.round(endTime - startTime)}ms)`);
       
-      return this.handleResponse<T>(response);
+      const result = await this.handleResponse<T>(response);
+      
+      if (this.verboseLogging) {
+        console.log(`📦 API Response Data: DELETE ${endpoint}`, result);
+      }
+      
+      return result;
     } catch (error) {
       console.error(`❌ API Error: DELETE ${endpoint} failed:`, error);
       
@@ -232,6 +272,21 @@ class ApiService {
   static setMockApiMode(useMock: boolean): void {
     this.useMockApi = useMock;
     console.log(`${useMock ? '🧪' : '🔌'} API Mode: ${useMock ? 'MOCK' : 'REAL'}`);
+  }
+  
+  /**
+   * Enable or disable verbose logging
+   */
+  static setVerboseLogging(verbose: boolean): void {
+    this.verboseLogging = verbose;
+    console.log(`🔊 Verbose Logging: ${verbose ? 'ENABLED' : 'DISABLED'}`);
+  }
+  
+  /**
+   * Get the current API base URL
+   */
+  static getApiBaseUrl(): string {
+    return API_BASE_URL;
   }
 }
 
