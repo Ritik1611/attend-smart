@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,7 +5,7 @@ import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { DayContent } from "react-day-picker";
 import { format } from "date-fns";
-import { db } from '../../firebaseConfig';
+import { db } from '@/firebaseConfig';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -34,7 +33,6 @@ const AttendanceCalendar = ({
   const [selectedDateClasses, setSelectedDateClasses] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Load attendance data from Firebase
   useEffect(() => {
     if (!currentUser) return;
     
@@ -62,12 +60,20 @@ const AttendanceCalendar = ({
         
         setAttendanceData(fetchedData);
         console.log("Fetched attendance data:", fetchedData);
+        
+        if (date) {
+          handleSelect(date);
+        }
       } catch (error) {
         console.error("Error fetching attendance data:", error);
       }
     };
     
     fetchAttendanceData();
+    
+    const refreshInterval = setInterval(fetchAttendanceData, 60000);
+    
+    return () => clearInterval(refreshInterval);
   }, [currentUser]);
 
   const handleSelect = async (selectedDate: Date | undefined) => {

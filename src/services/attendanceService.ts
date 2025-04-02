@@ -1,5 +1,5 @@
 
-import { db } from '../../firebaseConfig';
+import { db } from '../firebaseConfig';
 import { doc, updateDoc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { toast } from "sonner";
 import { scheduleNotifications } from './notificationService';
@@ -36,7 +36,7 @@ export const checkAttendance = async (position: GeolocationPosition, userId: str
     const userDoc = await getDoc(doc(db, "users", userId));
     if (!userDoc.exists()) {
       console.error("No user data found for attendance check");
-      return;
+      return false;
     }
     
     const userData = userDoc.data();
@@ -44,7 +44,7 @@ export const checkAttendance = async (position: GeolocationPosition, userId: str
     
     if (!campusLocation) {
       console.log("No campus location set");
-      return;
+      return false;
     }
     
     // Update user's last check time and location status

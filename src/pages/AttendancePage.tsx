@@ -26,12 +26,26 @@ const AttendancePage = () => {
           (position) => {
             console.log("Location access granted:", position.coords);
             setLocationStatus("enabled");
+            
+            // Trigger an immediate attendance check
+            import('@/services/attendanceService').then(({ checkAttendance }) => {
+              if (typeof checkAttendance === 'function') {
+                checkAttendance(position, currentUser.uid)
+                  .then(isPresent => {
+                    console.log("Initial attendance check complete, present:", isPresent);
+                  })
+                  .catch(err => {
+                    console.error("Error in initial attendance check:", err);
+                  });
+              }
+            });
           },
           (error) => {
             console.error("Location error:", error);
             setLocationStatus("disabled");
             toast.error("Location access is required for automated attendance");
-          }
+          },
+          { enableHighAccuracy: true, timeout: 10000 }
         );
       } else {
         setLocationStatus("unsupported");

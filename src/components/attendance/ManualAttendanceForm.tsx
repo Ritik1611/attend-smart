@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -31,7 +30,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { db } from '../../firebaseConfig';
+import { db } from '@/firebaseConfig';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { AttendanceApiService } from "@/services/attendanceApiService";
 import { markManualAttendance } from "@/services/attendanceService";
@@ -80,17 +79,12 @@ const ManualAttendanceForm: React.FC<ManualAttendanceFormProps> = ({ userId }) =
       
       console.log(`Attendance directly saved to Firestore: ${attendanceId}`);
       
-      // Also try API service as a backup
+      // Also try markManualAttendance function from attendanceService as a backup
       try {
-        await AttendanceApiService.markAttendance({
-          userId,
-          classId: data.classId,
-          date: dateString,
-          status: data.status,
-        });
-        console.log(`Attendance also recorded through API: ${attendanceId}`);
-      } catch (apiError) {
-        console.error("API backup recording failed (non-critical):", apiError);
+        await markManualAttendance(userId, data.classId, dateString, data.status);
+        console.log(`Attendance also recorded through service: ${attendanceId}`);
+      } catch (serviceError) {
+        console.error("Service backup recording failed (non-critical):", serviceError);
       }
       
       toast.success("Attendance recorded successfully");

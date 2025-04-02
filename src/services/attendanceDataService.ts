@@ -1,5 +1,5 @@
 
-import { db } from '../../firebaseConfig';
+import { db } from '../firebaseConfig';
 import { collection, query, where, getDocs, Timestamp } from 'firebase/firestore';
 
 export type AttendanceRecord = {

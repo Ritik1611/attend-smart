@@ -10,7 +10,7 @@ ApiService.setMockApiMode(false);
 
 // Log API configuration
 console.log('🔧 API Base URL:', ApiService.getApiBaseUrl());
-console.log('🧪 Using Mock API:', false); // Updated to false since we're using Firebase
+console.log('🧪 Using Mock API:', ApiService.isMockMode()); 
 
 // Get the root element
 const rootElement = document.getElementById("root");
