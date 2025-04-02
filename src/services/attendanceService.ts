@@ -1,4 +1,3 @@
-
 import { db } from '../firebaseConfig';
 import { doc, updateDoc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { toast } from "sonner";
@@ -171,6 +170,7 @@ export const markManualAttendance = async (userId: string, classId: string, date
   const attendanceId = `${userId}_${classId}_${date}`;
   
   try {
+    console.log(`📤 Attempting to mark manual attendance for ${attendanceId} with status: ${status}`); // Added logging
     // Check if attendance already recorded for this date and class
     const attendanceDoc = await getDoc(doc(db, "attendance", attendanceId));
     

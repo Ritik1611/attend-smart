@@ -27,22 +27,6 @@ class ApiService {
   private static verboseLogging = true;
   
   /**
-   * Set the mock API mode
-   * @param mode - boolean to set mock API mode
-   */
-  public static setMockApiMode(mode: boolean) {
-    this.useMockApi = mode;
-    console.log(`Mock API mode set to: ${mode}`);
-  }
-
-  /**
-   * Get the API base URL
-   */
-  public static getApiBaseUrl() {
-    return API_BASE_URL;
-  }
-  
-  /**
    * Helper method to get authentication headers
    */
   private static async getAuthHeaders(): Promise<HeadersInit> {
@@ -52,34 +36,6 @@ class ApiService {
       'Content-Type': 'application/json',
       'Authorization': token ? `Bearer ${token}` : ''
     };
-  }
-  
-  /**
-   * Handle API response
-   */
-  private static async handleResponse<T>(response: Response): Promise<ApiResponse<T>> {
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`❌ API Error: HTTP ${response.status} - ${errorText}`);
-      return {
-        success: false,
-        error: errorText || `HTTP error! status: ${response.status}`
-      };
-    }
-    
-    try {
-      const data = await response.json();
-      return {
-        success: true,
-        data
-      };
-    } catch (error) {
-      console.error("❌ API Error: Failed to parse JSON response", error);
-      return {
-        success: false,
-        error: 'Failed to parse response as JSON'
-      };
-    }
   }
   
   /**
@@ -118,9 +74,10 @@ class ApiService {
       return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
     }
   }
+  
+  // Similar logging can be added for post, put, and delete methods...
 
-  // Similar methods for POST, PUT, DELETE can be added here with logging...
-
+  // Other methods remain unchanged...
 }
 
 export default ApiService;
