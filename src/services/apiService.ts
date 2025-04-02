@@ -1,9 +1,8 @@
-
 import { auth } from "../../firebaseConfig";
 import MockApiService from "./mockApiService";
 
 // Base URL for our custom API - Allow environment variable override or fallback to default
-const DEFAULT_API_BASE_URL = "https://api.attendsmart.com/api"; 
+const DEFAULT_API_BASE_URL = "http://localhost:3001/api"; 
 const LOCAL_API_BASE_URL = "http://localhost:3001/api";
 
 // Get the API base URL from environment or use default
@@ -23,7 +22,7 @@ interface ApiResponse<T> {
  */
 class ApiService {
   // Flag to control if we're in mock mode - Set this to false by default to use Firebase
-  private static useMockApi = false;
+  public static useMockApi = false; // Changed back to public
   // Flag to control if we're showing verbose logging
   private static verboseLogging = true;
   
@@ -287,6 +286,13 @@ class ApiService {
    */
   static getApiBaseUrl(): string {
     return API_BASE_URL;
+  }
+
+  /**
+   * Check if mock API mode is enabled
+   */
+  static isMockApiMode(): boolean {
+    return this.useMockApi;
   }
 }
 

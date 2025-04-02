@@ -10,7 +10,7 @@ ApiService.setMockApiMode(false);
 
 // Log API configuration
 console.log('🔧 API Base URL:', ApiService.getApiBaseUrl());
-console.log('🧪 Using Mock API:', ApiService.isMockMode()); 
+console.log('🧪 Using Mock API:', ApiService.useMockApi); 
 
 // Get the root element
 const rootElement = document.getElementById("root");
