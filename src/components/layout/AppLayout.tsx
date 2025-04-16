@@ -8,13 +8,12 @@ import MobileNavBar from "./MobileNavBar";
 import { initAttendanceCheck } from "@/services/attendanceService";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { AlertCircle, CheckCircle2, Wifi, WifiOff } from "lucide-react";
 
 interface AppLayoutProps {
-  apiStatus: 'connected' | 'error';
+  apiStatus: 'connected' | 'error'; // Keeping this for backward compatibility
 }
 
-const AppLayout: React.FC<AppLayoutProps> = ({ apiStatus }) => {
+const AppLayout: React.FC<AppLayoutProps> = () => {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
   const location = useLocation();
@@ -88,26 +87,6 @@ const AppLayout: React.FC<AppLayoutProps> = ({ apiStatus }) => {
   return (
     <SidebarProvider>
       <div className="min-h-screen flex flex-col w-full">
-        {/* API Status Banner */}
-        <div className={`w-full py-1 px-4 text-center text-sm flex items-center justify-center ${
-          apiStatus === 'connected' ? 'bg-green-500/10 text-green-700 dark:text-green-400' : 
-                                   'bg-amber-500/10 text-amber-700 dark:text-amber-400'
-        }`}>
-          {apiStatus === 'connected' ? (
-            <>
-              <CheckCircle2 className="h-4 w-4 mr-2" />
-              <span>Connected to API server</span>
-              <Wifi className="h-4 w-4 ml-2" />
-            </>
-          ) : (
-            <>
-              <AlertCircle className="h-4 w-4 mr-2" />
-              <span>Limited connectivity - Some features may use fallback mode</span>
-              <WifiOff className="h-4 w-4 ml-2" />
-            </>
-          )}
-        </div>
-        
         <div className="flex flex-1">
           {!isMobile && <AppSidebar />}
           <div className="flex-1 flex flex-col min-h-screen">
