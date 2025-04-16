@@ -7,10 +7,9 @@ import {
   signOut, 
   onAuthStateChanged 
 } from 'firebase/auth';
-import { auth } from '../../firebaseConfig';
+import { auth } from '../firebaseConfig';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { db } from '../../firebaseConfig';
-import ApiService from '../services/apiService';
+import { db } from '../firebaseConfig';
 import { toast } from 'sonner';
 
 type AuthContextType = {
@@ -48,20 +47,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     console.log(`🔄 Fetching user settings for: ${userId}`);
     
     try {
-      // First attempt to use API
-      const response = await ApiService.get<{
-        requiredAttendance: number;
-        subjectThresholds?: Record<string, number>;
-      }>('/users/settings', { userId });
-      
-      if (response.success && response.data) {
-        console.log(`✅ User settings fetched via API for: ${userId}`);
-        setUserSettings(response.data);
-        return;
-      }
-      
-      console.log(`⚠️ API call failed for settings, falling back to Firestore for: ${userId}`);
-      // Fallback to Firestore
+      // Fetch directly from Firestore
       const userDoc = await getDoc(doc(db, "users", userId));
       if (userDoc.exists()) {
         const userData = userDoc.data();
@@ -69,12 +55,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           requiredAttendance: userData.requiredAttendance || 75,
           subjectThresholds: userData.subjectThresholds || {}
         });
+        console.log(`✅ User settings fetched for: ${userId}`);
       } else {
         // Default settings if user doc doesn't exist
         setUserSettings({
           requiredAttendance: 75,
           subjectThresholds: {}
         });
+        console.log(`ℹ️ No user settings found, using defaults for: ${userId}`);
       }
     } catch (error) {
       console.error("❌ Error fetching user settings:", error);
@@ -95,28 +83,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const user = userCredential.user;
         console.log(`✅ Firebase auth sign-up successful for: ${user.email}`);
         
-        try {
-          // First attempt to use API
-          const response = await ApiService.post('/auth/signup', {
-            userId: user.uid,
-            email: user.email,
-            createdAt: new Date().toISOString(),
-            requiredAttendance: 75,
-            subjectThresholds: {}
-          });
-          
-          if (response.success) {
-            console.log(`✅ API sign-up successful for: ${user.email}`);
-            return;
-          }
-          
-          console.log(`⚠️ API signup failed, falling back to Firestore for: ${user.email}`);
-        } catch (apiError) {
-          console.error("❌ API sign-up error:", apiError);
-          console.log(`⚠️ Falling back to Firestore for: ${user.email}`);
-        }
-        
-        // Create user document with default settings (Firestore fallback)
+        // Create user document with default settings
         return setDoc(doc(db, "users", user.uid), {
           email: user.email,
           createdAt: new Date().toISOString(),
@@ -134,21 +101,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     console.log(`🔄 Logging in user: ${email}`);
     
     return signInWithEmailAndPassword(auth, email, password)
-      .then(async (userCredential) => {
+      .then((userCredential) => {
         // Logged in
         const user = userCredential.user;
         console.log(`✅ Firebase auth login successful for: ${user.email}`);
         
-        try {
-          // First attempt to use API to log login
-          await ApiService.post('/auth/login', {
-            userId: user.uid,
-            email: user.email,
-            timestamp: new Date().toISOString(),
-          });
-        } catch (apiError) {
-          console.error("❌ API login logging error (non-critical):", apiError);
-        }
+        // Log login in Firestore (optional)
+        setDoc(doc(db, "user_logins", `${user.uid}_${new Date().getTime()}`), {
+          userId: user.uid,
+          email: user.email,
+          timestamp: new Date().toISOString(),
+        }, { merge: true }).catch(error => {
+          console.error("❌ Error logging login event (non-critical):", error);
+        });
         
         fetchUserSettings(user.uid);
       })
@@ -162,19 +127,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     console.log("🔄 Logging out user");
     
     return signOut(auth)
-      .then(async () => {
+      .then(() => {
         console.log("✅ Firebase auth logout successful");
         
-        try {
-          // Attempt to use API to log logout
-          if (currentUser) {
-            await ApiService.post('/auth/logout', {
-              userId: currentUser.uid,
-              timestamp: new Date().toISOString(),
-            });
-          }
-        } catch (apiError) {
-          console.error("❌ API logout logging error (non-critical):", apiError);
+        // Log logout in Firestore (optional)
+        if (currentUser) {
+          setDoc(doc(db, "user_logouts", `${currentUser.uid}_${new Date().getTime()}`), {
+            userId: currentUser.uid,
+            timestamp: new Date().toISOString(),
+          }, { merge: true }).catch(error => {
+            console.error("❌ Error logging logout event (non-critical):", error);
+          });
         }
         
         setUserSettings(null);
@@ -191,26 +154,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     console.log(`🔄 Updating user settings for: ${currentUser.uid}`);
     
     try {
-      // First attempt to use API
-      const response = await ApiService.put(`/users/settings`, {
-        userId: currentUser.uid,
-        ...settings
-      });
-      
-      if (response.success) {
-        console.log(`✅ User settings updated via API for: ${currentUser.uid}`);
-        
-        // Update local state
-        setUserSettings(prev => ({
-          ...prev,
-          ...settings
-        }));
-        
-        return;
-      }
-      
-      console.log(`⚠️ API update failed, falling back to Firestore for: ${currentUser.uid}`);
-      // Fallback to Firestore
+      // Update directly in Firestore
       const userRef = doc(db, "users", currentUser.uid);
       await setDoc(userRef, settings, { merge: true });
       
@@ -219,6 +163,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         ...prev,
         ...settings
       }));
+      
+      console.log(`✅ User settings updated for: ${currentUser.uid}`);
+      toast.success("Settings updated successfully");
     } catch (error) {
       console.error("❌ Error updating user settings:", error);
       toast.error("Failed to update settings. Please try again.");

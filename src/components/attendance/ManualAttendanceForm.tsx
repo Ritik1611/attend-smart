@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -32,7 +33,6 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { db } from '@/firebaseConfig';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { AttendanceApiService } from "@/services/attendanceApiService";
 import { markManualAttendance } from "@/services/attendanceService";
 
 interface ManualAttendanceFormProps {
@@ -67,7 +67,7 @@ const ManualAttendanceForm: React.FC<ManualAttendanceFormProps> = ({ userId }) =
       const dateString = format(data.date, "yyyy-MM-dd");
       const attendanceId = `${userId}_${data.classId}_${dateString}`;
       
-      // Direct Firestore save to ensure data is definitely stored
+      // Direct Firestore save
       await setDoc(doc(db, "attendance", attendanceId), {
         userId,
         classId: data.classId,
