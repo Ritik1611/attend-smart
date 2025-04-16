@@ -1,3 +1,4 @@
+
 import { auth } from "../../firebaseConfig";
 import MockApiService from "./mockApiService";
 
@@ -39,6 +40,34 @@ class ApiService {
   }
   
   /**
+   * Handle API response
+   */
+  private static async handleResponse<T>(response: Response): Promise<ApiResponse<T>> {
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`❌ API Error: HTTP ${response.status} - ${errorText}`);
+      return {
+        success: false,
+        error: errorText || `HTTP error! status: ${response.status}`
+      };
+    }
+    
+    try {
+      const data = await response.json();
+      return {
+        success: true,
+        data
+      };
+    } catch (error) {
+      console.error("❌ API Error: Failed to parse JSON response", error);
+      return {
+        success: false,
+        error: 'Failed to parse response as JSON'
+      };
+    }
+  }
+  
+  /**
    * Perform a GET request
    */
   static async get<T>(endpoint: string, params?: Record<string, string>): Promise<ApiResponse<T>> {
@@ -75,9 +104,91 @@ class ApiService {
     }
   }
   
-  // Similar logging can be added for post, put, and delete methods...
+  /**
+   * Perform a POST request
+   */
+  static async post<T>(endpoint: string, data: any): Promise<ApiResponse<T>> {
+    try {
+      console.log(`📤 API Request: POST ${API_BASE_URL}${endpoint}`, data);
+      
+      if (this.useMockApi) {
+        const mockResponse = await MockApiService.post<T>(endpoint, data);
+        console.log(`📥 API Response (MOCK): POST ${endpoint}`, mockResponse);
+        return mockResponse;
+      }
+      
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        method: 'POST',
+        headers: await this.getAuthHeaders(),
+        body: JSON.stringify(data)
+      });
+      
+      const result = await this.handleResponse<T>(response);
+      console.log(`📥 API Response: POST ${endpoint} - ${response.status}`, result);
+      
+      return result;
+    } catch (error) {
+      console.error(`❌ API Error: POST ${endpoint} failed:`, error);
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+    }
+  }
 
-  // Other methods remain unchanged...
+  /**
+   * Perform a PUT request
+   */
+  static async put<T>(endpoint: string, data: any): Promise<ApiResponse<T>> {
+    try {
+      console.log(`📤 API Request: PUT ${API_BASE_URL}${endpoint}`, data);
+      
+      if (this.useMockApi) {
+        const mockResponse = await MockApiService.put<T>(endpoint, data);
+        console.log(`📥 API Response (MOCK): PUT ${endpoint}`, mockResponse);
+        return mockResponse;
+      }
+      
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        method: 'PUT',
+        headers: await this.getAuthHeaders(),
+        body: JSON.stringify(data)
+      });
+      
+      const result = await this.handleResponse<T>(response);
+      console.log(`📥 API Response: PUT ${endpoint} - ${response.status}`, result);
+      
+      return result;
+    } catch (error) {
+      console.error(`❌ API Error: PUT ${endpoint} failed:`, error);
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+    }
+  }
+
+  /**
+   * Perform a DELETE request
+   */
+  static async delete<T>(endpoint: string): Promise<ApiResponse<T>> {
+    try {
+      console.log(`📤 API Request: DELETE ${API_BASE_URL}${endpoint}`);
+      
+      if (this.useMockApi) {
+        const mockResponse = await MockApiService.delete<T>(endpoint);
+        console.log(`📥 API Response (MOCK): DELETE ${endpoint}`, mockResponse);
+        return mockResponse;
+      }
+      
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        method: 'DELETE',
+        headers: await this.getAuthHeaders()
+      });
+      
+      const result = await this.handleResponse<T>(response);
+      console.log(`📥 API Response: DELETE ${endpoint} - ${response.status}`, result);
+      
+      return result;
+    } catch (error) {
+      console.error(`❌ API Error: DELETE ${endpoint} failed:`, error);
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+    }
+  }
 }
 
 export default ApiService;
